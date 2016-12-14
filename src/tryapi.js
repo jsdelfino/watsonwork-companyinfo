@@ -1,4 +1,4 @@
-import * as company from './company.js'
+import * as company from './company.js';
 
 company.entities('I\'m meeting with folks at Boeing tomorrow',
   'testspaceid', 'testmsgid', Date.now(), 'testuserid', 'testusername',

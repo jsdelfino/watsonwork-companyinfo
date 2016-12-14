@@ -34,7 +34,7 @@ export const companyInfo = (appId, token, fruserId, frkey) => (req, res) => {
 
   // React to mentions of company names in the message and send company
   // information back to the conversation in the originating space
-  if(msg.content) {
+  if(msg.content)
 
     // Attempt to recognize mentioned company entities
     company.entities(msg.content,
@@ -42,35 +42,32 @@ export const companyInfo = (appId, token, fruserId, frkey) => (req, res) => {
       msg.userId, msg.userName,
       fruserId, frkey, (err, entities) => {
 
-      console.log('EEEEE', entities);
-      (entities || []).map((entity) => {
-        if(entity.score < 60)
-          return;
+        (entities || []).map((entity) => {
+          if(entity.score < 60)
+            return;
 
-        // Retrieve each company metadata
-        company.metadata(entity.id, fruserId, frkey, (err, info) => {
-          if(info) {
-            // Send a message with the company metadata / info
-            send(req.body.spaceId,
-              util.format(                                   
-                '*Company*\n%s\n' +
-                '*Industries*\n%s\n' +                                   
-                '*Sectors*\n%s\n' +                                         
-                '*Segments*\n%s\n',
-                info.name,
-                info.industries.map((i) => i.name).join(','),
-                info.sectors.map((s) => s.name).join(', '),
-                info.segments.map((s) => s.name).join(', ')),
-              token(),
-              (err, res) => {
-                if(!err)
-                  log('Sent message to space %s', req.body.spaceId);
-              });
-          }
+          // Retrieve each company metadata
+          company.metadata(entity.id, fruserId, frkey, (err, info) => {
+            if(info)
+              // Send a message with the company metadata / info
+              send(req.body.spaceId,
+                util.format(                                   
+                  '*Company*\n%s\n' +
+                  '*Industries*\n%s\n' +                                   
+                  '*Sectors*\n%s\n' +                                         
+                  '*Segments*\n%s\n',
+                  info.name,
+                  info.industries.map((i) => i.name).join(','),
+                  info.sectors.map((s) => s.name).join(', '),
+                  info.segments.map((s) => s.name).join(', ')),
+                token(),
+                (err, res) => {
+                  if(!err)
+                    log('Sent message to space %s', req.body.spaceId);
+                });
+          });
         });
-      })
-    });
-  }
+      });
 };
 
 // Send an app message to the conversation in a space
@@ -91,15 +88,7 @@ const send = (spaceId, text, tok, cb) => {
           version: 1.0,
 
           color: '#6CB7FB',
-          text: text,
-
-          /*
-          actor: {
-            name: 'from sample companyinfo app',
-            avatar: 'https://avatars1.githubusercontent.com/u/22985179',
-            url: 'https://github.com/jsdelfino/watsonwork-companyinfo'
-          }
-          */
+          text: text
         }]
       }
     }, (err, res) => {

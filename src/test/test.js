@@ -19,7 +19,7 @@ require.cache[require.resolve('request')].exports = {
 
 // Configure test entity recognition and metadata URLs
 process.env.COMPANYINFO_FR_METADATA_URL = 'https://test/entity/%s/metadata';
-process.env.COMPANYINFO_FR_ER_URL='https://test/entity/recognition'
+process.env.COMPANYINFO_FR_ER_URL = 'https://test/entity/recognition';
 
 // Load the Company Info app
 const companyInfo = require('../app');
@@ -70,9 +70,9 @@ describe('watsonwork-companyinfo', () => {
     // Create the Company Info Web app
     companyInfo.webapp('testappid', 'testsecret', 'testwsecret',
       'testfruserid', 'testfrkey', (err, app) => {
-      expect(err).to.equal(null);
-      check();
-    });
+        expect(err).to.equal(null);
+        check();
+      });
   });
 
   it('handles Webhook challenge requests', (done) => {
@@ -96,40 +96,42 @@ describe('watsonwork-companyinfo', () => {
     // Create the Company Info Web app
     companyInfo.webapp('testappid', 'testsecret', 'testwsecret',
       'testfruserid', 'testfrkey', (err, app) => {
-      expect(err).to.equal(null);
-
-      // Listen on an ephemeral port
-      const server = app.listen(0);
-
-      // Post a Webhook challenge request to the app
-      request.post(
-        'http://localhost:' + server.address().port + '/companyinfo', {
-        headers: {
-          // Signature of the test body with the Webhook secret
-          'X-OUTBOUND-TOKEN':
-            'f51ff5c91e99c63b6fde9e396bb6ea3023727f74f1853f29ab571cfdaaba4c03'
-        },
-        json: true,
-        body: {
-          type: 'verification',
-          challenge: 'testchallenge'
-        }
-      }, (err, res) => {
         expect(err).to.equal(null);
-        expect(res.statusCode).to.equal(200);
 
-        // Expect correct challenge response and signature
-        expect(res.body.response).to.equal('testchallenge');
-        expect(res.headers['x-outbound-token']).to.equal(
-          // Signature of the test body with the Webhook secret
-          '876d1f9de1b36514d30bcf48d8c4731a69500730854a964e31764159d75b88f1');
+        // Listen on an ephemeral port
+        const server = app.listen(0);
 
-        check();
+        // Post a Webhook challenge request to the app
+        request.post(
+          'http://localhost:' + server.address().port + '/companyinfo', {
+            headers: {
+              // Signature of the test body with the Webhook secret
+              'X-OUTBOUND-TOKEN':
+                'f51ff5c91e99c63b6fde9e396bb6ea' +
+                '3023727f74f1853f29ab571cfdaaba4c03'
+            },
+            json: true,
+            body: {
+              type: 'verification',
+              challenge: 'testchallenge'
+            }
+          }, (err, res) => {
+            expect(err).to.equal(null);
+            expect(res.statusCode).to.equal(200);
+
+            // Expect correct challenge response and signature
+            expect(res.body.response).to.equal('testchallenge');
+            expect(res.headers['x-outbound-token']).to.equal(
+              // Signature of the test body with the Webhook secret
+              '876d1f9de1b36514d30bcf48d8c4' +
+              '731a69500730854a964e31764159d75b88f1');
+
+            check();
+          });
       });
-    });
   });
 
-  it.only('posts company information messages back', (done) => {
+  it('posts company information messages back', (done) => {
 
     // Check async callbacks
     let checks = 0;
@@ -218,38 +220,39 @@ describe('watsonwork-companyinfo', () => {
         check();
         return;
       }
-    }
+    };
 
     // Create the Company Info Web app
     companyInfo.webapp('testappid', 'testsecret', 'testwsecret',
       'testfruserid', 'testfrkey', (err, app) => {
-      expect(err).to.equal(null);
-
-      // Listen on an ephemeral port
-      const server = app.listen(0);
-
-      // Post a chat message to the app
-      request.post(
-        'http://localhost:' + server.address().port + '/companyinfo', {
-        headers: {
-          'X-OUTBOUND-TOKEN':
-            // Signature of the body with the Webhook secret
-            '885d8a05999b704443eae5576439e0aa13eb19a10f197c5a5bf7226f22313ad9'
-        },
-        json: true,
-        body: {
-          type: 'message-created',
-          content: 'I\'m meeting with folks at Acme tomorrow',
-          userName: 'Jane',
-          spaceId: 'testspace'
-        }
-      }, (err, val) => {
         expect(err).to.equal(null);
-        expect(val.statusCode).to.equal(201);
 
-        check();
+        // Listen on an ephemeral port
+        const server = app.listen(0);
+
+        // Post a chat message to the app
+        request.post(
+          'http://localhost:' + server.address().port + '/companyinfo', {
+            headers: {
+              'X-OUTBOUND-TOKEN':
+                // Signature of the body with the Webhook secret
+                '885d8a05999b704443eae5576439e0aa' +
+                '13eb19a10f197c5a5bf7226f22313ad9'
+            },
+            json: true,
+            body: {
+              type: 'message-created',
+              content: 'I\'m meeting with folks at Acme tomorrow',
+              userName: 'Jane',
+              spaceId: 'testspace'
+            }
+          }, (err, val) => {
+            expect(err).to.equal(null);
+            expect(val.statusCode).to.equal(201);
+
+            check();
+          });
       });
-    });
   });
 
   it('rejects messages with invalid signature', (done) => {
@@ -273,35 +276,35 @@ describe('watsonwork-companyinfo', () => {
     // Create the Company Info Web app
     companyInfo.webapp('testappid', 'testsecret', 'testwsecret',
       'testfruserid', 'testfrkey', (err, app) => {
-      expect(err).to.equal(null);
-
-      // Listen on an ephemeral port
-      const server = app.listen(0);
-
-      // Post a chat message to the app
-      request.post(
-        'http://localhost:' + server.address().port + '/companyinfo', {
-        headers: {
-          'X-OUTBOUND-TOKEN':
-            // Test an invalid body signature
-            'invalidsignature'
-        },
-        json: true,
-        body: {
-          type: 'message-created',
-          content: 'I\'m meeting with folks at Acme tomorrow',
-          userName: 'Jane',
-          spaceId: 'testspace'
-        }
-      }, (err, val) => {
         expect(err).to.equal(null);
 
-        // Expect the request to be rejected
-        expect(val.statusCode).to.equal(401);
+        // Listen on an ephemeral port
+        const server = app.listen(0);
 
-        check();
+        // Post a chat message to the app
+        request.post(
+          'http://localhost:' + server.address().port + '/companyinfo', {
+            headers: {
+              'X-OUTBOUND-TOKEN':
+                // Test an invalid body signature
+                'invalidsignature'
+            },
+            json: true,
+            body: {
+              type: 'message-created',
+              content: 'I\'m meeting with folks at Acme tomorrow',
+              userName: 'Jane',
+              spaceId: 'testspace'
+            }
+          }, (err, val) => {
+            expect(err).to.equal(null);
+
+            // Expect the request to be rejected
+            expect(val.statusCode).to.equal(401);
+
+            check();
+          });
       });
-    });
   });
 });
 
