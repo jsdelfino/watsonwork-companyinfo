@@ -17,6 +17,10 @@ require.cache[require.resolve('request')].exports = {
   get: (uri, opt, cb) => getspy(uri, opt, cb)
 };
 
+// Configure test entity recognition and metadata URLs
+process.env.COMPANYINFO_FR_METADATA_URL = 'https://test/entity/%s/metadata';
+process.env.COMPANYINFO_FR_ER_URL='https://test/entity/recognition'
+
 // Load the Company Info app
 const companyInfo = require('../app');
 
