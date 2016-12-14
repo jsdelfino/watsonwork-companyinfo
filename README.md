@@ -79,6 +79,10 @@ select your app and under **Runtime** / **Environment Variables** /
 COMPANYINFO_APP_ID: <the Company Info app id>                                      
 COMPANYINFO_APP_SECRET: <the Company Info app secret>                              
 COMPANYINFO_WEBHOOK_SECRET: <the Company Info Webhook secret>
+COMPANYINFO_FR_USER_ID: <Your company entity service user id>
+COMPANYINFO_FR_KEY: <Your company entity service key>
+COMPANYINFO_FR_ER_URL: <Your company entity recognition service URL>
+COMPANYINFO_FR_METADATA_URL: <Your company entity metadata service URL>
 DEBUG: watsonwork-*
 ```
 
@@ -94,6 +98,12 @@ In the terminal window, do the following:
 export COMPANYINFO_APP_ID=<the Company Info app id>
 export COMPANYINFO_APP_SECRET=<the Company Info app secret>
 export COMPANYINFO_WEBHOOK_SECRET=<the Company Info Webhook secret>
+
+# Configure the entity service
+export COMPANYINFO_FR_USER_ID=<Your company entity service user id>
+export COMPANYINFO_FR_KEY=<Your company entity service key>
+export COMPANYINFO_FR_ER_URL=<Your company entity recognition service URL>
+export COMPANYINFO_FR_METADATA_URL=<You company entity metadata service URL>
 ```
 
 The Watson Work platform requires Webhook endpoints to use HTTPS. The
@@ -189,10 +199,10 @@ Go to [Watson Workspace](https://workspace.ibm.com) and create a space
 named **Examples**, then open the **Apps** tab for that space and add the
 **Company Info** app to it.
 
-In the **Examples** space, say "*I'm meeting with IBM tomorrow*".
+In the **Examples** space, say "*I'm meeting with Acme tomorrow*".
 
-The sample app will react to your mention of IBM by  pro-actively posting
-back a message with information about the IBM company.
+The sample app will react to your mention of Acme by pro-actively posting
+back a message with information about the Acme company.
 
 The application will also output the following log:
 ```
