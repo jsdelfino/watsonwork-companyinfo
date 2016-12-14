@@ -11,6 +11,7 @@ import * as http from 'http';
 import * as https from 'https';
 import * as oauth from './oauth';
 import * as ssl from './ssl';
+import * as company from './company';
 import debug from 'debug';
 
 // Debug log
@@ -18,7 +19,7 @@ const log = debug('watsonwork-companyinfo-app');
 
 // Look for company entities mentioned in messages and automatically retrieve
 // and post information about these companies
-export const companyInfo = (appId, token) => (req, res) => {
+export const companyInfo = (appId, token, fruserId, frkey) => (req, res) => {
   // Respond to the Webhook right away, as the response message will
   // be sent asynchronously
   res.status(201).end();
@@ -29,28 +30,51 @@ export const companyInfo = (appId, token) => (req, res) => {
     return;
 
   log('Got a message %o', req.body);
+  const msg = req.body;
 
   // React to mentions of company names in the message and send company
   // information back to the conversation in the originating space
-  if(req.body.content
-    // Tokenize the message text into individual words
-    .split(/[^A-Za-z0-9]+/)
-    // Look for a mention of a company name
-    .filter((word) => /^(Acme)$/i.test(word)).length)
+  if(msg.content) {
 
-    // Send the company info message
-    send(req.body.spaceId,
-      'Acme',
-      util.format('The Acme company'),
-      token(),
-      (err, res) => {
-        if(!err)
-          log('Sent message to space %s', req.body.spaceId);
-      });
+    // Attempt to recognize mentioned company entities
+    company.entities(msg.content,
+      msg.spaceId, msg.messageId, msg.time,
+      msg.userId, msg.userName,
+      fruserId, frkey, (err, entities) => {
+
+      console.log('EEEEE', entities);
+      (entities || []).map((entity) => {
+        if(entity.score < 60)
+          return;
+
+        // Retrieve each company metadata
+        company.metadata(entity.id, fruserId, frkey, (err, info) => {
+          if(info) {
+            // Send a message with the company metadata / info
+            send(req.body.spaceId,
+              util.format(                                   
+                '*Company*\n%s\n' +
+                '*Industries*\n%s\n' +                                   
+                '*Sectors*\n%s\n' +                                         
+                '*Segments*\n%s\n',
+                info.name,
+                info.industries.map((i) => i.name).join(','),
+                info.sectors.map((s) => s.name).join(', '),
+                info.segments.map((s) => s.name).join(', ')),
+              token(),
+              (err, res) => {
+                if(!err)
+                  log('Sent message to space %s', req.body.spaceId);
+              });
+          }
+        });
+      })
+    });
+  }
 };
 
 // Send an app message to the conversation in a space
-const send = (spaceId, title, text, tok, cb) => {
+const send = (spaceId, text, tok, cb) => {
   request.post(
     'https://api.watsonwork.ibm.com/v1/spaces/' + spaceId + '/messages', {
       headers: {
@@ -67,14 +91,15 @@ const send = (spaceId, title, text, tok, cb) => {
           version: 1.0,
 
           color: '#6CB7FB',
-          title: title,
           text: text,
 
+          /*
           actor: {
             name: 'from sample companyinfo app',
             avatar: 'https://avatars1.githubusercontent.com/u/22985179',
             url: 'https://github.com/jsdelfino/watsonwork-companyinfo'
           }
+          */
         }]
       }
     }, (err, res) => {
@@ -115,7 +140,7 @@ export const challenge = (wsecret) => (req, res, next) => {
 };
 
 // Create Express Web app
-export const webapp = (appId, secret, wsecret, cb) => {
+export const webapp = (appId, secret, wsecret, fruserId, frkey, cb) => {
   // Authenticate the app and get an OAuth token
   oauth.run(appId, secret, (err, token) => {
     if(err) {
@@ -139,7 +164,7 @@ export const webapp = (appId, secret, wsecret, cb) => {
         challenge(wsecret),
 
         // Handle Watson Work messages
-        companyInfo(appId, token)));
+        companyInfo(appId, token, fruserId, frkey)));
   });
 };
 
@@ -148,7 +173,8 @@ const main = (argv, env, cb) => {
   // Create Express Web app
   webapp(
     env.COMPANYINFO_APP_ID, env.COMPANYINFO_APP_SECRET,
-    env.COMPANYINFO_WEBHOOK_SECRET, (err, app) => {
+    env.COMPANYINFO_WEBHOOK_SECRET,
+    env.COMPANYINFO_FR_USER_ID, env.COMPANYINFO_FR_KEY, (err, app) => {
       if(err) {
         cb(err);
         return;

@@ -6,12 +6,15 @@
 
 import { expect } from 'chai';
 import * as jsonwebtoken from 'jsonwebtoken';
-import { post } from 'request';
+import * as util from 'util';
+import * as request from 'request';
 
 // Rudimentary mock of the request module
 let postspy;
+let getspy;
 require.cache[require.resolve('request')].exports = {
-  post: (uri, opt, cb) => postspy(uri, opt, cb)
+  post: (uri, opt, cb) => postspy(uri, opt, cb),
+  get: (uri, opt, cb) => getspy(uri, opt, cb)
 };
 
 // Load the Company Info app
@@ -61,7 +64,8 @@ describe('watsonwork-companyinfo', () => {
     };
 
     // Create the Company Info Web app
-    companyInfo.webapp('testappid', 'testsecret', 'testwsecret', (err, app) => {
+    companyInfo.webapp('testappid', 'testsecret', 'testwsecret',
+      'testfruserid', 'testfrkey', (err, app) => {
       expect(err).to.equal(null);
       check();
     });
@@ -86,14 +90,16 @@ describe('watsonwork-companyinfo', () => {
     };
 
     // Create the Company Info Web app
-    companyInfo.webapp('testappid', 'testsecret', 'testwsecret', (err, app) => {
+    companyInfo.webapp('testappid', 'testsecret', 'testwsecret',
+      'testfruserid', 'testfrkey', (err, app) => {
       expect(err).to.equal(null);
 
       // Listen on an ephemeral port
       const server = app.listen(0);
 
       // Post a Webhook challenge request to the app
-      post('http://localhost:' + server.address().port + '/companyinfo', {
+      request.post(
+        'http://localhost:' + server.address().port + '/companyinfo', {
         headers: {
           // Signature of the test body with the Webhook secret
           'X-OUTBOUND-TOKEN':
@@ -119,12 +125,12 @@ describe('watsonwork-companyinfo', () => {
     });
   });
 
-  it('posts company information messages back', (done) => {
+  it.only('posts company information messages back', (done) => {
 
     // Check async callbacks
     let checks = 0;
     const check = () => {
-      if(++checks === 3)
+      if(++checks === 5)
         done();
     };
 
@@ -134,6 +140,23 @@ describe('watsonwork-companyinfo', () => {
         oauth(uri, opt, cb);
         check();
         return;
+      }
+
+      // Expect a call to recognize company entities
+      if(uri === process.env.COMPANYINFO_FR_ER_URL) {
+        setImmediate(() => cb(undefined, {
+          statusCode: 200,
+          // Return company entity
+          body: {
+            result: {
+              entity: [{
+                searchToken: 'C:AcmeCompany',
+                relevanceScore: 100
+              }]
+            }
+          }
+        }));
+        check();
       }
 
       // Expect a call to send company info message to the test space
@@ -151,14 +174,10 @@ describe('watsonwork-companyinfo', () => {
             version: 1.0,
 
             color: '#6CB7FB',
-            title: 'Acme',
-            text: 'The Acme company',
-
-            actor: {
-              name: 'from sample companyinfo app',
-              avatar: 'https://avatars1.githubusercontent.com/u/22985179',
-              url: 'https://github.com/jsdelfino/watsonwork-companyinfo'
-            }
+            text: '*Company*\nThe Acme company\n*' +
+              'Industries*\nTest industry\n' +
+              '*Sectors*\nTest sector\n' +
+              '*Segments*\nTest segment\n'
           }]
         });
         setImmediate(() => cb(undefined, {
@@ -171,15 +190,43 @@ describe('watsonwork-companyinfo', () => {
       }
     };
 
+    getspy = (uri, opt, cb) => {
+      // Expect a call to get company information
+      if(uri === util.format(process.env.COMPANYINFO_FR_METADATA_URL,
+        'C:AcmeCompany')) {
+        // Return company information
+        setImmediate(() => cb(undefined, {
+          statusCode: 200,
+          body: {
+            result: {
+              name: 'The Acme company',
+              data: {
+                entityMap: {
+                  language: [],
+                  industry: [{ name: 'Test industry' }],
+                  sector: [{ name: 'Test sector' }],
+                  segment: [{ name: 'Test segment' }]
+                }
+              }
+            }
+          }
+        }));
+        check();
+        return;
+      }
+    }
+
     // Create the Company Info Web app
-    companyInfo.webapp('testappid', 'testsecret', 'testwsecret', (err, app) => {
+    companyInfo.webapp('testappid', 'testsecret', 'testwsecret',
+      'testfruserid', 'testfrkey', (err, app) => {
       expect(err).to.equal(null);
 
       // Listen on an ephemeral port
       const server = app.listen(0);
 
       // Post a chat message to the app
-      post('http://localhost:' + server.address().port + '/companyinfo', {
+      request.post(
+        'http://localhost:' + server.address().port + '/companyinfo', {
         headers: {
           'X-OUTBOUND-TOKEN':
             // Signature of the body with the Webhook secret
@@ -220,14 +267,16 @@ describe('watsonwork-companyinfo', () => {
     };
 
     // Create the Company Info Web app
-    companyInfo.webapp('testappid', 'testsecret', 'testwsecret', (err, app) => {
+    companyInfo.webapp('testappid', 'testsecret', 'testwsecret',
+      'testfruserid', 'testfrkey', (err, app) => {
       expect(err).to.equal(null);
 
       // Listen on an ephemeral port
       const server = app.listen(0);
 
       // Post a chat message to the app
-      post('http://localhost:' + server.address().port + '/companyinfo', {
+      request.post(
+        'http://localhost:' + server.address().port + '/companyinfo', {
         headers: {
           'X-OUTBOUND-TOKEN':
             // Test an invalid body signature
